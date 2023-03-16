@@ -1,0 +1,10 @@
+---
+k3s_version: v1.24.10+k3s1
+ansible_user: 
+ansible_connection: ssh
+ansible_password: 
+systemd_dir: /etc/systemd/system
+master_ip: "{{ hostvars[groups['master'][0]]['ansible_host'] | default(groups['master'][0]) }}"
+extra_server_args: "--cluster-init --disable traefik --disable local-storage --disable servicelb --token "
+slave_extra_server_args: "--token  --disable traefik --disable local-storage --disable servicelb --server https://{{master_ip}}:6443"
+extra_agent_args: "--token  --server https://{{master_ip}}:6443"

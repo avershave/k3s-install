@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: topomojo-nfs
+spec:
+  storageClassName: 'nfs'
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  nfs:
+    server: $TOPOMOJO_NFS_SERVER
+    path: '$TOPOMOJO_NFS_PATH'

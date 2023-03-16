@@ -1,0 +1,15 @@
+#!/bin/bash
+
+set -ebpf
+
+cfssl gencert -initca root-ca.json | cfssljson -bare root-ca
+cfssl gencert -ca root-ca.pem -ca-key root-ca-key.pem -config config.json \
+              -profile intca int-ca.json | cfssljson -bare int-ca
+cfssl gencert -ca int-ca.pem -ca-key int-ca-key.pem -config config.json \
+              -profile server host.json | cfssljson -bare host
+
+# Create pkcs12 host bundle for identity signing key
+openssl pkcs12 -export -out host.pfx -inkey host-key.pem -in host.pem \
+               -passin pass:foundry -passout pass:foundry
+
+sed -ri "s|(signer:) \"\"|\1 $(base64 -w0 host.pfx)|" ..values/foundry/identity.values.yaml

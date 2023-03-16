@@ -1,0 +1,8 @@
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  namespace: metallb-system
+  name: first-pool
+spec:
+  addresses:
+  - $METALLB_START_IP - $METALLB_LAST_IP

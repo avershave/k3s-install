@@ -1,0 +1,149 @@
+# Default values for mkdocs-material.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: squidfunk/mkdocs-material
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "9.0.4"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: true
+  className: ""
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/app-root: /start
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      rewrite ^(/start)$ $1/ redirect;
+  hosts:
+    - host: savage-lab.net
+      paths:
+        - path: /start(/|$)(.*)
+          pathType: ImplementationSpecific
+  tls:
+    - secretName: appliance-cert
+      hosts:
+        - savage-lab.net
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+# storage - either an existing pvc, the size for a new pvc, or emptyDir (git requires a pvc)
+storage:
+  existing: ""
+  size: "100Mi"
+  mode: ReadWriteOnce
+  class: longhorn
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+##################
+# Git deployment #
+##################
+
+## giturl is the url of an MkDocs git repository
+giturl: "https://savage-lab.net/gitea/k3s-savage/mkdocs"
+
+## gitbranch sets which repo branch to publish
+gitbranch: ""
+
+## pollInterval sets minutes between git pull
+pollInterval: 1440
+
+# cacert - add custom CA certificate
+cacert: |-
+  -----BEGIN CERTIFICATE-----
+  MIIDGDCCAgCgAwIBAgIUM2CAYF59zgLfE3dCvPRz6VbkbHwwDQYJKoZIhvcNAQEL
+  BQAwJDEiMCAGA1UEAxMZRm91bmRyeSBBcHBsaWFuY2UgUm9vdCBDQTAeFw0yMzAy
+  MDkyMTAwMDBaFw0yODAyMDgyMTAwMDBaMCQxIjAgBgNVBAMTGUZvdW5kcnkgQXBw
+  bGlhbmNlIFJvb3QgQ0EwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCs
+  99LSPaHJsN050m0RAVG0rM2nnOfK+PlexIF2lJyAsKN5304ni1mJ48EPEzQjDvIC
+  hBTAnWyqvmvJbzdUkCh78VouTjiG+78H0wi2pjgR0F5wQrwtY26YmvafNRo2lY5s
+  +CLq3ejqG9iGiB3nrN6qeHCjMlprAmUVkxHGpekznxRfX2um0tF66qWXRGb0Iue7
+  eiznYsIf2zlAV9Og7ML2bJQ7WAML1moJqhOZGJQ6/GFHr3v0w7UqHxGe/w1ov4y2
+  RtqAQOaS4zunjeOKAbjh9b5v3Ar5jwbCnBa+g5LhNOS+qSdtYorS0UO26AZcW/tX
+  2BYiRreFklM6+VZc+TPlAgMBAAGjQjBAMA4GA1UdDwEB/wQEAwIBBjAPBgNVHRMB
+  Af8EBTADAQH/MB0GA1UdDgQWBBTCvxKADZV4H3gLCZ/9BSuJA5NPkTANBgkqhkiG
+  9w0BAQsFAAOCAQEAnHzk63ogQoejp678jby94+Ym21J67xOtBCPomZBQLbJHaEoF
+  gotSqCC+IWquKTcbM7gFbuYOGb0O1jIDke3vouL5KkGaJECxX3ybQNudRNiqvK9B
+  Pv3lDSV2bCjibbp5hepMiQ10xuf5I9Y9bTJfH7S0H9xrA8ZLRutE0j7FG3d/742P
+  ccXfZvse/mYI/DUT4E6tMnCZjq0DMKh3peHnnF7wkeHJCC9DAzk8gAJsEqL4xlKO
+  jD7gV98Ko9o9stZAbsLM7xecr3k+aQ4FaL/RwVDu7gZ3QkzMRkf7tqPuSe9pgVhm
+  vDZpZReQOHdwYS9n2EIYd7oxq6/IxnT1tLSEWQ==
+  -----END CERTIFICATE-----
+
+######################
+# Non-Git deployment #
+######################
+
+## mkdocs YAML configuration
+mkdocs: {}
+  # site_name: My Site
+  # theme:
+  #   name: material
+
+## files populates text files inside /docs
+files: {}
+  # index.md: |
+  #   Welcome to My Site
+  #
+  # page2.md: |
+  #   More content goes here.
+
+# binaryFiles populates binary files inside /docs
+binaryFiles: {}
+

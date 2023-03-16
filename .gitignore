@@ -1,0 +1,17 @@
+# exclude all certs
+*.pem
+*.csr
+*.pfx
+
+# exclude vsphere certs
+certificates/vsphere
+certificates/vsphere_test
+
+# exclude helm pulls
+helm-charts/
+
+# excludes backups
+*.bak
+
+# exclude ansible settings
+k3s-ansible/inventory/k3s

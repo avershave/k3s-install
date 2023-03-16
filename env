@@ -1,0 +1,109 @@
+#!/bin/bash
+
+set -ebpf
+
+#####################
+##     GLOBAL      ##
+#####################
+export K3S_VERSION=1.24.9
+export RANCHER_VERSION=v2.7.0
+export LONGHORN_VERSION=v1.4.0
+export DOMAIN=
+export GLOBAL_ADMIN_PASS=
+export RANCHER_PASS=
+
+#####################
+##     VSPHERE     ##
+#####################
+export VSPHERE_SERVER=
+export VSPHERE_DATACENTER=
+export VSPHERE_CLUSTER=
+
+#####################
+##     METALLB     ##
+#####################
+export METALLB_START_IP=
+export METALLB_LAST_IP=
+
+#####################
+##    POSTGRES     ##
+#####################
+export POSTGRES_USER=postgres
+export POSTGRES_PASS=
+export POSTGRES_SERVICE_NAME=postgresql
+
+#####################
+##      GITEA      ##
+#####################
+export GITEA_OAUTH_CLIENT_SECRET=
+
+
+#####################
+##    CRUCIBLE     ##
+#####################
+# One of: Information, Debug, Warning, Error
+export CRUCIBLE_LOG_LEVEL=Information
+# This is a background user for inter-application api access. 
+export CRUCIBLE_ADMIN_PASS=
+export CRUCIBLE_GITLAB_URL=gitlab.
+export STACKSTORM_MONGO_SERVER=mongodb
+export STACKSTORM_MONGO_USER=st2
+export STACKSTORM_MONGO_PASS=
+export STACKSTORM_MONGO_KEY=
+export STACKSTORM_RABBITMQ_PASS=
+export STACKSTORM_RABBITMQ_COOKIE=
+# These are only required if you need stackstorm to access azure
+export AZURE_COMPUTE_SUBSCRIPTION_ID=
+export AZURE_COMPUTE_CERT_FILE=
+export AZURE_STORAGE_NAME=
+export AZURE_STORAGE_ACCESS_KEY=
+export AZURE_RESOURCE_CLIENT_ID=
+export AZURE_RESOURCE_SECRET=
+export AZURE_RESOURCE_TENANT=
+export AZURE_RESOURCE_DEFAULT_GROUP=
+export AZURE_USER=
+export AZURE_PASS=
+
+#####################
+##    TOPOMOJO     ##
+#####################
+# TopoMojo service account name and password
+export TOPOMOJO_VSPHERE_USER=
+export TOPOMOJO_VSPHERE_PASS=
+# Path to the resource pool used for TopoMojo
+export TOPOMOJO_POD_POOLPATH=
+# Distributed Virtual Switch used with TopoMojo
+export TOPOMOJO_DVS=
+# [name-of-store]
+export TOPOMOJO_VMSTORE=
+export TOPOMOJO_ISOSTORE=
+export TOPOMOJO_DISKSTORE=
+export TOPOMOJO_DISKSTORE_PATH=
+export TOPOMOJO_ISOSTORE_PATH=
+export TOPOMOJO_VMSTORE_PATH=
+export TOPOMOJO_NFS_SERVER=
+export TOPOMOJO_NFS_PATH=
+
+#####################
+##     MOODLE      ##
+#####################
+# For future installation/upgrade of Moodle, set this to true
+export SKIP_INSTALL=false
+export MOODLE_USERNAME=administrator
+export MOODLE_PASSWORD=
+export ROOT_MARIA_DB_PASSWORD=
+export MOODLE_MARIADB_USERNAME=
+export MOODLE_MARIADB_PASSWORD=
+# Change to match your domain i.e. moodle.crucible.io
+export MOODLE_HOSTNAME=moodle.
+#Replace $DOMAIN with your domain
+export IDENTITY_URL=https://$DOMAIN/identity
+export IDENTITY_CLIENTID=moodle-client
+export IDENTITY_CLIENTSECRET=
+export IDENTITY_LOGINSCOPES='openid profile email alloy-api steamfitter-api caster-api'
+export IDENTITY_LOGINSCOPESOFFLINE='openid profile email alloy-api steamfitter-api caster-api'
+export IDENTITY_NAME='Local Identity'
+export IDENTITY_SHOWONLOGINPAGE=true
+# Replace $DOMAIN with your domain
+export IDENTITY_IMAGE=https://$DOMAIN/identity/favicon.ico
+export IDENTITY_REQUIRECONFIRMATION=false

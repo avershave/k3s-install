@@ -1,0 +1,97 @@
+# !/bin/bash
+kubectl config set-context --current --namespace=default
+
+#######################
+#   SETTING COLORS    #
+#######################
+RED='\033[0;31m'
+WHITE='\033[1;37m'
+NC='\033[0m' # NO COLOR
+
+cat << "EOF"
+                                 .-..-.
+   _____                         | || |
+  /____/-.---_  .---.  .---.  .-.| || | .---.
+  | |  _   _  |/  _  \/  _  \/  _  || |/  __ \
+  * | | | | | || |_| || |_| || |_| || || |___/
+    |_| |_| |_|\_____/\_____/\_____||_|\_____)
+EOF
+
+echo -e "${WHITE}Waiting for Moodle to start up, this can take ~6m${NC}"
+echo -e "${WHITE}You can always check the progress with kubectl get pods${NC}"
+envsubst < moodle.values.yaml | helm install -f - moodle bitnami/moodle --wait --timeout 6m
+export moodlePodName=$(kubectl get pods | grep moodle | grep -v maria | awk '{print $1}')
+
+if [ -z "$moodlePodName" ]; then
+  echo -e "${RED}moodlePodName NOT SET${NC}"
+  exit 1
+fi
+
+
+echo -e "${WHITE}Applying moove theme and foundrysync tool${NC}"
+unzip -oq theme_moove.zip
+unzip -oq tool_foundrysync.zip
+kubectl cp moove $moodlePodName:/bitnami/moodle/theme/
+kubectl cp foundrysync $moodlePodName:/bitnami/moodle/admin/tool/
+kubectl exec -it $moodlePodName -- /bin/bash -c "php /bitnami/moodle/admin/cli/upgrade.php --non-interactive --allow-unstable"
+echo -e "${WHITE}DONE${NC}"
+
+echo -e "${WHITE}Setting theme to moove${NC}"
+kubectl exec -it $moodlePodName -- /bin/bash -c "php /bitnami/moodle/admin/cli/cfg.php --name=theme --set=moove"
+echo -e "${WHITE}DONE${NC}"
+
+echo -e "${WHITE}Increasing upload size to 500M${NC}"
+kubectl exec -it $moodlePodName -- /bin/bash -c "sed -i 's/40M/500M/' /opt/bitnami/php/etc/php.ini"
+echo -e "${WHITE}DONE${NC}"
+
+echo -e "${WHITE}Moodle cache settings${NC}"
+kubectl exec -it $moodlePodName -- /bin/bash -c "sed -i 's/;opcache.use_cwd=1/opcache.use_cwd=1/' /opt/bitnami/php/etc/php.ini"
+kubectl exec -it $moodlePodName -- /bin/bash -c "sed -i 's/;opcache.validate_timestamps=1/opcache.validate_timestamps=1/' /opt/bitnami/php/etc/php.ini"
+kubectl exec -it $moodlePodName -- /bin/bash -c "sed -i 's/;opcache.save_comments=1/opcache.save_comments=1/' /opt/bitnami/php/etc/php.ini"
+kubectl exec -it $moodlePodName -- /bin/bash -c "sed -i 's/;opcache.enable_file_override=0/opcache.enable_file_override=0/' /opt/bitnami/php/etc/php.ini"
+echo -e "${WHITE}DONE${NC}"
+
+#echo -e "${WHITE}OAuth2 Provider Setup${NC}"
+COMMAND=$( kubectl exec -it $moodlePodName -- /bin/bash -c "php /bitnami/moodle/admin/tool/foundrysync/cli/manage.php --baseurl='https://savage-lab.net/identity' --clientid=moodle-client --clientsecret=2b3969dbc52e41558b6c862024817aaa --loginscopes='openid profile email alloy-api steamfitter-api caster-api' --loginscopesoffline='openid profile email alloy-api steamfitter-api caster-api' --name='Local Identity' --showonloginpage=true --image=https://savage-lab.net/identity/favicon.ico --requireconfirmation=false --json" )
+ISSUER_CMD=$( echo "$COMMAND" | jq '[ .success, (.data | .id) ] | @csv' | tr -d '"')
+
+IFS=',' read -r -a RESULT <<< $ISSUER_CMD
+
+if [ "${RESULT[0]}" != "true" ]; then
+  echo -e "${RED}ERROR: ${RESULT[0]}"
+  echo -e "${RED}Failed to create new OAuth2 issuer, exiting...${NC}"
+  exit 1
+fi
+
+echo -e "${WHITE}OAuth2 Provider configured${NC}"
+
+echo -e "${WHITE}Setting theme_foundry id to newly created issuer...${NC}"
+kubectl exec -it $moodlePodName -- /bin/bash -c "php /bitnami/moodle/admin/cli/cfg.php --component=theme_moove --name=issuerid --set=${RESULT[1]}"
+echo -e "${WHITE}DONE${NC}"
+
+echo -e "${WHITE}Enabling oAuth2${NC}"
+kubectl exec -it $moodlePodName -- /bin/bash -c "php /bitnami/moodle/admin/cli/cfg.php --name=auth --set=oauth2,outage"
+echo -e "${WHITE}DONE${NC}"
+
+echo -e "${WHITE}==========Setting additional reccommended options==========${NC}"
+echo -e "${WHITE}Setting timezone${NC}"
+kubectl exec -it $moodlePodName -- /bin/bash -c "php /bitnami/moodle/admin/cli/cfg.php --name=timezone --set=America/New_York"
+echo -e "${WHITE}Turning off email change confirmation${NC}"
+kubectl exec -it $moodlePodName -- /bin/bash -c "php /bitnami/moodle/admin/cli/cfg.php --name=emailchangeconfirmation --set=0"
+echo -e "${WHITE}Setting country to US${NC}"
+kubectl exec -it $moodlePodName -- /bin/bash -c "php /bitnami/moodle/admin/cli/cfg.php --name=country --set=US"
+echo -e "${WHITE}Setting forcelogin${NC}"
+kubectl exec -it $moodlePodName -- /bin/bash -c "php /bitnami/moodle/admin/cli/cfg.php --name=forcelogin --set=1"
+echo -e "${WHITE}Setting forceloginforprofileimage${NC}"
+kubectl exec -it $moodlePodName -- /bin/bash -c "php /bitnami/moodle/admin/cli/cfg.php --name=forceloginforprofileimage --set=1"
+echo -e "${WHITE}Disabling guest login button${NC}"
+kubectl exec -it $moodlePodName -- /bin/bash -c "php /bitnami/moodle/admin/cli/cfg.php --name=guestloginbutton --set=0"
+echo -e "${WHITE}Setting enrol plugin settings${NC}"
+kubectl exec -it $moodlePodName -- /bin/bash -c "php /bitnami/moodle/admin/cli/cfg.php --name=enrol_plugins_enabled --set='manual,self,cohort'"
+echo -e "${WHITE}Disabling langmenu${NC}"
+kubectl exec -it $moodlePodName -- /bin/bash -c "php /bitnami/moodle/admin/cli/cfg.php --name=langmenu --set=0"
+echo -e "${WHITE}Disabling send course welcomg message${NC}"
+kubectl exec -it $moodlePodName -- /bin/bash -c "php /bitnami/moodle/admin/cli/cfg.php --component=enrol_self --name=sendcoursewelcomemessage --set=0"
+echo -e "${WHITE}Disabling course end date${NC}"
+kubectl exec -it $moodlePodName -- /bin/bash -c "php /bitnami/moodle/admin/cli/cfg.php --component=moodlecourse --name=courseenddateenabled --set=0"
+echo -e "${WHITE}==========DONE==========${NC}"

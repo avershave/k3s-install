@@ -1,0 +1,330 @@
+topomojo-api:
+  # Default values for topomojo-api.
+  # This is a YAML-formatted file.
+  # Declare variables to be passed into your templates.
+
+  replicaCount: 1
+
+  image:
+    repository: cmusei/topomojo-api
+    pullPolicy: IfNotPresent
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: "2.1.6"
+
+  imagePullSecrets: []
+  nameOverride: ""
+  fullnameOverride: ""
+
+  serviceAccount:
+    # Specifies whether a service account should be created
+    create: true
+    # Annotations to add to the service account
+    annotations: {}
+    # The name of the service account to use.
+    # If not set and create is true, a name is generated using the fullname template
+    name: ""
+
+  podAnnotations: {}
+
+  podSecurityContext: {}
+    # fsGroup: 2000
+
+  securityContext: {}
+    # capabilities:
+    #   drop:
+    #   - ALL
+    # readOnlyRootFilesystem: true
+    # runAsNonRoot: true
+    # runAsUser: 1000
+
+  service:
+    type: ClusterIP
+    port: 80
+
+  ingress:
+    enabled: true
+    annotations:
+      nginx.ingress.kubernetes.io/proxy-body-size: 6g
+    hosts:
+      - host: $DOMAIN
+        paths:
+          - path: /topomojo/api
+            pathType: ImplementationSpecific
+          - path: /topomojo/hub
+            pathType: ImplementationSpecific
+          - path: /topomojo/docs
+            pathType: ImplementationSpecific
+    tls:
+      - secretName: appliance-cert
+        hosts:
+          - $DOMAIN
+
+  # storage - either an existing pvc, the size for a new pvc, or emptyDir
+  storage:
+    existing: topomojo
+    size: ""
+    mode: ReadWriteOnce
+    class: nfs
+
+  resources: {}
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube. If you do want to specify resources, uncomment the following
+    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    # limits:
+    #   cpu: 200m
+    #   memory: 512Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 256Mi
+
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 80
+    # targetMemoryUtilizationPercentage: 80
+
+  nodeSelector: {}
+
+  tolerations: []
+
+  affinity: {}
+
+  ## customStart overrides the default start process.  Files are mounted in `/start`
+  customStart:
+    command: ['/bin/sh']
+    args: ['/start/start.sh']
+    binaryFiles: {}
+    files:
+      start.sh: |
+        #!/bin/sh
+        cp /start/*.crt /usr/local/share/ca-certificates && update-ca-certificates
+        cd /app && dotnet TopoMojo.Api.dll
+      cacert.crt: |-
+        -----BEGIN CERTIFICATE-----
+        MIIDGDCCAgCgAwIBAgIUM2CAYF59zgLfE3dCvPRz6VbkbHwwDQYJKoZIhvcNAQEL
+        BQAwJDEiMCAGA1UEAxMZRm91bmRyeSBBcHBsaWFuY2UgUm9vdCBDQTAeFw0yMzAy
+        MDkyMTAwMDBaFw0yODAyMDgyMTAwMDBaMCQxIjAgBgNVBAMTGUZvdW5kcnkgQXBw
+        bGlhbmNlIFJvb3QgQ0EwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCs
+        99LSPaHJsN050m0RAVG0rM2nnOfK+PlexIF2lJyAsKN5304ni1mJ48EPEzQjDvIC
+        hBTAnWyqvmvJbzdUkCh78VouTjiG+78H0wi2pjgR0F5wQrwtY26YmvafNRo2lY5s
+        +CLq3ejqG9iGiB3nrN6qeHCjMlprAmUVkxHGpekznxRfX2um0tF66qWXRGb0Iue7
+        eiznYsIf2zlAV9Og7ML2bJQ7WAML1moJqhOZGJQ6/GFHr3v0w7UqHxGe/w1ov4y2
+        RtqAQOaS4zunjeOKAbjh9b5v3Ar5jwbCnBa+g5LhNOS+qSdtYorS0UO26AZcW/tX
+        2BYiRreFklM6+VZc+TPlAgMBAAGjQjBAMA4GA1UdDwEB/wQEAwIBBjAPBgNVHRMB
+        Af8EBTADAQH/MB0GA1UdDgQWBBTCvxKADZV4H3gLCZ/9BSuJA5NPkTANBgkqhkiG
+        9w0BAQsFAAOCAQEAnHzk63ogQoejp678jby94+Ym21J67xOtBCPomZBQLbJHaEoF
+        gotSqCC+IWquKTcbM7gFbuYOGb0O1jIDke3vouL5KkGaJECxX3ybQNudRNiqvK9B
+        Pv3lDSV2bCjibbp5hepMiQ10xuf5I9Y9bTJfH7S0H9xrA8ZLRutE0j7FG3d/742P
+        ccXfZvse/mYI/DUT4E6tMnCZjq0DMKh3peHnnF7wkeHJCC9DAzk8gAJsEqL4xlKO
+        jD7gV98Ko9o9stZAbsLM7xecr3k+aQ4FaL/RwVDu7gZ3QkzMRkf7tqPuSe9pgVhm
+        vDZpZReQOHdwYS9n2EIYd7oxq6/IxnT1tLSEWQ==
+        -----END CERTIFICATE-----
+        -----BEGIN CERTIFICATE-----
+        MIIFFjCCAv6gAwIBAgIRAJErCErPDBinU/bWLiWnX1owDQYJKoZIhvcNAQELBQAw
+        TzELMAkGA1UEBhMCVVMxKTAnBgNVBAoTIEludGVybmV0IFNlY3VyaXR5IFJlc2Vh
+        cmNoIEdyb3VwMRUwEwYDVQQDEwxJU1JHIFJvb3QgWDEwHhcNMjAwOTA0MDAwMDAw
+        WhcNMjUwOTE1MTYwMDAwWjAyMQswCQYDVQQGEwJVUzEWMBQGA1UEChMNTGV0J3Mg
+        RW5jcnlwdDELMAkGA1UEAxMCUjMwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEK
+        AoIBAQC7AhUozPaglNMPEuyNVZLD+ILxmaZ6QoinXSaqtSu5xUyxr45r+XXIo9cP
+        R5QUVTVXjJ6oojkZ9YI8QqlObvU7wy7bjcCwXPNZOOftz2nwWgsbvsCUJCWH+jdx
+        sxPnHKzhm+/b5DtFUkWWqcFTzjTIUu61ru2P3mBw4qVUq7ZtDpelQDRrK9O8Zutm
+        NHz6a4uPVymZ+DAXXbpyb/uBxa3Shlg9F8fnCbvxK/eG3MHacV3URuPMrSXBiLxg
+        Z3Vms/EY96Jc5lP/Ooi2R6X/ExjqmAl3P51T+c8B5fWmcBcUr2Ok/5mzk53cU6cG
+        /kiFHaFpriV1uxPMUgP17VGhi9sVAgMBAAGjggEIMIIBBDAOBgNVHQ8BAf8EBAMC
+        AYYwHQYDVR0lBBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMBMBIGA1UdEwEB/wQIMAYB
+        Af8CAQAwHQYDVR0OBBYEFBQusxe3WFbLrlAJQOYfr52LFMLGMB8GA1UdIwQYMBaA
+        FHm0WeZ7tuXkAXOACIjIGlj26ZtuMDIGCCsGAQUFBwEBBCYwJDAiBggrBgEFBQcw
+        AoYWaHR0cDovL3gxLmkubGVuY3Iub3JnLzAnBgNVHR8EIDAeMBygGqAYhhZodHRw
+        Oi8veDEuYy5sZW5jci5vcmcvMCIGA1UdIAQbMBkwCAYGZ4EMAQIBMA0GCysGAQQB
+        gt8TAQEBMA0GCSqGSIb3DQEBCwUAA4ICAQCFyk5HPqP3hUSFvNVneLKYY611TR6W
+        PTNlclQtgaDqw+34IL9fzLdwALduO/ZelN7kIJ+m74uyA+eitRY8kc607TkC53wl
+        ikfmZW4/RvTZ8M6UK+5UzhK8jCdLuMGYL6KvzXGRSgi3yLgjewQtCPkIVz6D2QQz
+        CkcheAmCJ8MqyJu5zlzyZMjAvnnAT45tRAxekrsu94sQ4egdRCnbWSDtY7kh+BIm
+        lJNXoB1lBMEKIq4QDUOXoRgffuDghje1WrG9ML+Hbisq/yFOGwXD9RiX8F6sw6W4
+        avAuvDszue5L3sz85K+EC4Y/wFVDNvZo4TYXao6Z0f+lQKc0t8DQYzk1OXVu8rp2
+        yJMC6alLbBfODALZvYH7n7do1AZls4I9d1P4jnkDrQoxB3UqQ9hVl3LEKQ73xF1O
+        yK5GhDDX8oVfGKF5u+decIsH4YaTw7mP3GFxJSqv3+0lUFJoi5Lc5da149p90Ids
+        hCExroL1+7mryIkXPeFM5TgO9r0rvZaBFOvV2z0gp35Z0+L4WPlbuEjN/lxPFin+
+        HlUjr8gRsI3qfJOQFy/9rKIJR0Y/8Omwt/8oTWgy1mdeHmmjk7j1nYsvC9JSQ6Zv
+        MldlTTKB3zhThV1+XWYp6rjd5JW1zbVWEkLNxE7GJThEUG3szgBVGP7pSWTUTsqX
+        nLRbwHOoq7hHwg==
+        -----END CERTIFICATE-----
+
+  # Config app settings with environment vars.
+  # Those most likely needing values are listed. For others,
+  # see https://github.com/cmu-sei/TopoMojo/blob/main/src/TopoMojo.Api/appsettings.conf
+  env:
+    PathBase: "/topomojo"
+    Database__Provider: PostgreSQL
+    Database__ConnectionString: Server=postgresql;Port=5432;Database=topomojo;Username=$POSTGRES_USER;Password=$POSTGRES_PASS;SSL Mode=Prefer;Trust Server Certificate=true;
+    Database__AdminId: dee684c5-2eaf-401a-915b-d3d4320fe5d5
+    Database__AdminName: Administrator
+    Cache__SharedFolder: ""
+    OpenApi__Client__ClientId: topomojo-swagger
+    FileUpload__IsoRoot: /mnt/tm
+    FileUpload__TopoRoot: /mnt/tm
+    FileUpload__DocRoot: /mnt/tm/_docs
+    # FileUpload__MaxFileBytes: 0
+    Oidc__Authority: https://$DOMAIN/identity
+    ApiKeyClients__0__Id: gameengine
+    ApiKeyClients__0__Key: foundry
+    ApiKeyClients__0__Scope: gameboard
+    Core__ConsoleHost: $DOMAIN/console
+    Pod__Url: "https://$VSPHERE_SERVER"
+    Pod__User: $TOPOMOJO_VSPHERE_USER
+    Pod__Password: $TOPOMOJO_VSPHERE_PASS
+    Pod__PoolPath: $TOPOMOJO_POD_POOLPATH
+    Pod__Uplink: $TOPOMOJO_DVS
+    Pod__VmStore: "[$TOPOMOJO_VMSTORE] $TOPOMOJO_VMSTORE_PATH/"
+    Pod__IsoStore: "[$TOPOMOJO_ISOSTORE] $TOPOMOJO_DISKSTORE_PATH/"
+    Pod__DiskStore: "[$TOPOMOJO_DISKSTORE] $TOPOMOJO_ISOSTORE_PATH"
+    Pod__ConsoleUrl: $DOMAIN/console
+    Pod__TicketUrlHandler: querystring
+    Pod__Vlan__Range: '1500-2000'
+    Pod__KeepAliveMinutes: 30
+    # Pod__ExcludeNetworkMask: topomojo
+    # Logging__Console__DisableColors: false
+    # Logging__LogLevel__Default: Information
+    # Headers__LogHeaders: false
+    Headers__Cors__Origins__0: https://$DOMAIN
+    # Headers__Cors__Methods__[0]: ""
+    # Headers__Cors__Headers__[0]: ""
+    # Headers__Cors__AllowAnyOrigin: false
+    # Headers__Cors__AllowAnyMethod: false
+    # Headers__Cors__AllowAnyHeader: false
+    # Headers__Cors__AllowCredentials: false
+    # Headers__Forwarding__ForwardLimit: 1
+    Headers__Forwarding__TargetHeaders: All
+    Headers__Forwarding__KnownNetworks: 10.0.0.0/8 172.16.0.0/12 192.168.0.0/24 ::ffff:a00:0/104 ::ffff:b00a:0/108 ::ffff:c0d0:0/120
+    # Headers__Forwarding__KnownProxies: ::1
+    # Headers__Security__ContentSecurity: default-src 'self' 'unsafe-inline'; img-src data: 'self'
+    # Headers__Security__XContentType: nosniff
+    # Headers__Security__XFrame: SAMEORIGIN
+    # Logging__LogLevel__Microsoft.Hosting.Lifetime: Debug
+    # Logging__LogLevel__Microsoft: Debug
+
+
+topomojo-ui:
+  # Default values for topomojo-ui.
+  # This is a YAML-formatted file.
+  # Declare variables to be passed into your templates.
+
+  replicaCount: 1
+
+  image:
+    repository: cmusei/topomojo-ui
+    pullPolicy: IfNotPresent
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: "2.1.6"
+
+  imagePullSecrets: []
+  nameOverride: ""
+  fullnameOverride: ""
+
+  serviceAccount:
+    # Specifies whether a service account should be created
+    create: true
+    # Annotations to add to the service account
+    annotations: {}
+    # The name of the service account to use.
+    # If not set and create is true, a name is generated using the fullname template
+    name: ""
+
+  podAnnotations: {}
+
+  podSecurityContext: {}
+    # fsGroup: 2000
+
+  securityContext: {}
+    # capabilities:
+    #   drop:
+    #   - ALL
+    # readOnlyRootFilesystem: true
+    # runAsNonRoot: true
+    # runAsUser: 1000
+
+  service:
+    type: ClusterIP
+    port: 80
+
+  ingress:
+    enabled: true
+    annotations:
+      nginx.ingress.kubernetes.io/proxy-body-size: 6g
+      # kubernetes.io/tls-acme: "true"
+    hosts:
+      - host: $DOMAIN
+        paths:
+          - path: /topomojo
+            pathType: ImplementationSpecific
+    tls:
+      - secretName: appliance-cert
+        hosts:
+          - $DOMAIN
+
+  resources: {}
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube. If you do want to specify resources, uncomment the following
+    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    # limits:
+    #   cpu: 20m
+    #   memory: 20Mi
+    # requests:
+    #   cpu: 20m
+    #   memory: 20Mi
+
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 80
+    # targetMemoryUtilizationPercentage: 80
+
+  nodeSelector: {}
+
+  tolerations: []
+
+  affinity: {}
+
+  ## basehref is path to the app
+  basehref: "/topomojo"
+
+  ## openGraph is string of html head metadata (single line!)
+  # openGraph: >-
+  #   <!-- Open Graph info for link previews -->
+  #   <meta property="og:title" content="AppNmae" />
+  #   <meta property="og:type" content="website" />
+  #   <meta property="og:url" content="https://some.url" />
+  #   <meta property="og:image" content="https://some.url/logo.png" />
+  #   <meta property="og:description" content="description" />
+
+  ## faviconsUrl is a url to tgz of icon bundle. If bundle has favicon.html,
+  ## its contents will be merged into index.html head element.
+  # faviconsUrl: "https://some.url/favs.tgz"
+
+  ## settings is stringified json that gets included as assets/settings.json
+  settings: |
+    {
+      "appname": "TopoMojo",
+      "apphost": "",
+      "mkshost": "",
+      "oidc": {
+        "authority": "https://$DOMAIN/identity",
+        "client_id": "topomojo-client",
+        "redirect_uri": "https://$DOMAIN/topomojo/oidc",
+        "silent_redirect_uri": "https://$DOMAIN/topomojo/oidc-silent.html",
+        "post_logout_redirect_uri": "https://$DOMAIN/topomojo",
+        "response_type": "code",
+        "scope": "openid profile topomojo-api",
+        "automaticSilentRenew": false,
+        "includeIdTokenInSilentRenew": false,
+        "filterProtocolClaims": true,
+        "loadUserInfo": true,
+        "accessTokenExpiringNotificationTime": 120,
+        "monitorSession": false,
+        "useLocalStorage": false
+      }
+    }
