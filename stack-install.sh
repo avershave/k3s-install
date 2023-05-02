@@ -55,10 +55,13 @@ function prep () {
     helm repo add bitnami https://charts.bitnami.com/bitnami
     helm repo add metallb https://metallb.github.io/metallb
     helm repo update
+
+    echo "Please install nfs-common on all k3s nodes."
 }
 
 ################################# certificates ################################
 function certificates () {
+    [ "$UID" -eq 0 ] || { echo "Please run the certificates command as sudo."; exit 1;}
     envsubst < certificates/host-template.json > certificates/host.json
     cfssl gencert -initca certificates/root-ca.json | cfssljson -bare root-ca
     cfssl gencert -ca certificates/root-ca.pem -ca-key certificates/root-ca-key.pem -config certificates/config.json \
@@ -75,8 +78,8 @@ function certificates () {
 
     kubectl create secret tls appliance-cert --key certificates/host-key.pem --cert <( cat certificates/host.pem certificates/int-ca.pem ) --dry-run=client -o yaml | kubectl apply -f -
     kubectl create secret generic appliance-root-ca --from-file=appliance-root-ca=certificates/root-ca.pem --dry-run=client -o yaml | kubectl apply -f -
-    # curl -#OL https://$VSPHERE_SERVER/certs/download.zip
-    # unzip download.zip -d certificates/vsphere
+    curl -#OL https://$VSPHERE_SERVER/certs/download.zip
+    unzip download.zip -d certificates/vsphere
     kubectl create configmap appliance-root-ca --from-file=root-ca.crt=certificates/root-ca.pem --from-file=vsphere-ca.crt=certificates/vsphere.pem --dry-run=client -o yaml | kubectl apply -f -
 }
 
@@ -469,7 +472,7 @@ function usage () {
   echo ""
   echo " Usage: $0 {certificates | appname | validate}"
   echo ""
-  echo " $0 certificates # create and import staging certificates into default namespace"
+  echo " $0 certificates # create and import staging certificates into default namespace ** NEEDS SUDO"
   echo " $0 metallb # deploy metallb"
   echo " $0 ingress-nginx # deploy metallb"
   echo " $0 rancher # deploy rancher"
