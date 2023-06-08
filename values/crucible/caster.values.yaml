@@ -80,8 +80,8 @@ caster-api:
     # VSphere settings:
     # TODO - Document VSphere user role requirements
     VSPHERE_SERVER: $VSPHERE_SERVER
-    VSPHERE_USER: $VSPHERE_USER
-    VSPHERE_PASSWORD: $VSPHERE_PASSWORD
+    VSPHERE_USER: $CRUCIBLE_SVC_ACCOUNT
+    VSPHERE_PASSWORD: $CRUCIBLE_SVC_ACCOUNT_PASSWD
     VSPHERE_ALLOW_UNVERIFIED_SSL: true
 
     # === Terraform Crucible Provider Section ===
