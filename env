@@ -46,6 +46,7 @@ export CRUCIBLE_LOG_LEVEL=Information
 # This is a background user for inter-application api access. 
 export CRUCIBLE_ADMIN_PASS=
 export CRUCIBLE_GITLAB_URL=gitlab.
+# Crucible service account name and password
 export CRUCIBLE_SVC_ACCOUNT=
 export CRUCIBLE_SVC_ACCOUNT_PASSWD=
 export STACKSTORM_MONGO_SERVER=mongodb
