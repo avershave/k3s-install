@@ -96,7 +96,7 @@ function ingress-nginx () {
         echo "Metallb Required"
         exit 1
     fi
-    helm upgrade -i nginx ingress-nginx/ingress-nginx --namespace nginx --create-namespace --set controller.watchIngressWithoutClass=true --set controller.kind=Deployment --set controller.ingressClassResource.name=nginx --set controller.ingressClassResource.default=true --set controller.ingressClass=nginx
+    helm upgrade -i nginx ingress-nginx/ingress-nginx --namespace nginx --create-namespace --set controller.watchIngressWithoutClass=true --set controller.kind=Deployment --set controller.ingressClassResource.name=nginx --set controller.ingressClassResource.default=true --set controller.ingressClass=nginx --set controller.allowSnippetAnnotations=true
 }
 
 ################################# rancher ################################
@@ -359,6 +359,33 @@ function crucible () {
     git -C $MKDOCS_DIR push -u https://administrator:$GLOBAL_ADMIN_PASS@$DOMAIN/gitea/foundry/mkdocs.git --all
 }
 
+################################# alloy ################################
+function alloy () {
+    if [ "${HAS_POSTGRES}" != "true" ]; then
+    echo "Postgresql Required"
+    exit 1
+    fi
+    envsubst < values/crucible/alloy.values.yaml | helm upgrade -i alloy sei/alloy -f -
+}
+
+################################# player ################################
+function player () {
+    if [ "${HAS_POSTGRES}" != "true" ]; then
+    echo "Postgresql Required"
+    exit 1
+    fi
+    envsubst < values/crucible/player.values.yaml | helm upgrade -i player sei/player -f -
+}
+
+################################# caster ################################
+function caster () {
+    if [ "${HAS_POSTGRES}" != "true" ]; then
+    echo "Postgresql Required"
+    exit 1
+    fi
+    envsubst < values/crucible/caster.values.yaml | helm upgrade -i caster sei/caster -f -
+}
+
 ################################# moodle ################################
 function moodle () {
   kubectl config set-context --current --namespace=default
@@ -504,6 +531,9 @@ case "$1" in
         topomojo) topomojo;;
         gitlab) gitlab;;
         crucible) crucible;;
+        alloy) alloy;;
+        player) player;;
+        caster) caster;;
         moodle) moodle;;
         validate) validate;;
         *) usage;;
