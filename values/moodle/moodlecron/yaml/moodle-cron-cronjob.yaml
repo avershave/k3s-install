@@ -1,0 +1,36 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: moodle-php-cron
+  namespace: moodle # check what namespace Moodle is in
+  
+spec:
+  schedule: "* * * * *"  # runs every minute
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: moodle-cron
+              image: bitnami/kubectl:latest
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                  - ALL
+                privileged: false
+                readOnlyRootFilesystem: true
+                runAsGroup: 1001
+                runAsNonRoot: true
+                runAsUser: 1001
+              command: ["/opt/moodle-cron.sh"]
+              volumeMounts:
+                - name: cron-script
+                  mountPath: /opt
+          restartPolicy: OnFailure
+          serviceAccountName: moodle-cron
+          volumes:
+            - name: cron-script
+              configMap:
+                name: moodle-cron-script
+                defaultMode: 0777
