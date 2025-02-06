@@ -112,16 +112,26 @@ st2:
     # https://docs.stackstorm.com/reference/pack_configs.html#configuration-file
     # NOTE: This takes precedence over the contents of st2.packs.volumes.configs (if defined) on helm upgrade.
     configs:
-      core.yaml: |
+      vsphere.yaml: | 
         ---
-        # example core pack config yaml
+        ssl_verify: false
+        vsphere:
+          default:
+            host: "$VSPHERE_SERVER"
+            port: 443
+            user: "$VSPHERE_USER"
+            passwd: "$VSPHERE_PASS"
 
     # Custom packs images settings.
     #
     # For each given st2packs container you can define repository, name, tag and pullPolicy for this image below.
     # Multiple pack images can help when dealing with frequent updates by only rebuilding smaller images for desired packs
     # E.g. having all desired StackStorm-Exchange packs in one image and several custom packs in additional images
-    images: []
+    images:
+      - repository: cmusei
+        name: st2packs
+        tag: 1.2.0
+        pullPolicy: IfNotPresent
       #- repository: index.docker.io/stackstorm
       #  name: st2packs
       #  tag: example
