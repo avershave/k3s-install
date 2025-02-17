@@ -318,7 +318,7 @@ gitea:
   oauth:
     - name: Foundry
       provider: openidConnect
-      autoDiscoverUrl: https://savage-lab.net/identity/.well-known/openid-configuration
+      autoDiscoverUrl: https://$DOMAIN/identity/.well-known/openid-configuration
       existingSecret: gitea-oauth-client
 
   ## @param gitea.config  Configuration for the Gitea server,ref: [config-cheat-sheet](https://docs.gitea.io/en-us/config-cheat-sheet/)

@@ -125,7 +125,7 @@ function postgresql () {
         echo "Longhorn Required"
         exit 1
     fi
-    helm upgrade -i postgresql bitnami/postgresql --set global.storageClass=longhorn --set global.postgresql.auth.postgresPassword=$POSTGRES_PASS
+    helm upgrade -i postgresql bitnami/postgresql --set global.defaultStorageClass=longhorn --set global.postgresql.auth.postgresPassword=$POSTGRES_PASS
     envsubst < values/postgresql/pgadmin4.values.yaml | helm upgrade -i pgadmin runix/pgadmin4 -f -
     echo "Postgres Password: $POSTGRES_PASS"
 }

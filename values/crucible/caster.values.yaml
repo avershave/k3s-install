@@ -3,13 +3,13 @@ caster-api:
   # Docker image release version
   image:
     # Caster API version
-    tag: "3.2.0"
+    tag: "3.4.1"
   
   # Ingress configuration example for NGINX
   # TLS and Host URLs need configured
   ingress:
     enabled: true
-    className: ""
+    className: "nginx"
     annotations:
       kubernetes.io/ingress.class: nginx
       nginx.ingress.kubernetes.io/proxy-read-timeout: '86400'
@@ -200,13 +200,13 @@ caster-ui:
 
   # Docker image release version
   image:
-    tag: "3.2.0"
+    tag: "3.4.0"
 
   # Ingress configuration example for NGINX
   # TLS and Host URLs need configured
   ingress:
     enabled: true
-    className: ""
+    className: "nginx"
     annotations:
       kubernetes.io/ingress.class: nginx
       nginx.ingress.kubernetes.io/proxy-read-timeout: '86400'

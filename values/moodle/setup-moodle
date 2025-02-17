@@ -52,7 +52,7 @@ kubectl exec -it $moodlePodName -- /bin/bash -c "sed -i 's/;opcache.enable_file_
 echo -e "${WHITE}DONE${NC}"
 
 #echo -e "${WHITE}OAuth2 Provider Setup${NC}"
-COMMAND=$( kubectl exec -it $moodlePodName -- /bin/bash -c "php /bitnami/moodle/admin/tool/foundrysync/cli/manage.php --baseurl='https://savage-lab.net/identity' --clientid=moodle-client --clientsecret=2b3969dbc52e41558b6c862024817aaa --loginscopes='openid profile email alloy-api steamfitter-api caster-api' --loginscopesoffline='openid profile email alloy-api steamfitter-api caster-api' --name='Local Identity' --showonloginpage=true --image=https://savage-lab.net/identity/favicon.ico --requireconfirmation=false --json" )
+COMMAND=$( kubectl exec -it $moodlePodName -- /bin/bash -c "php /bitnami/moodle/admin/tool/foundrysync/cli/manage.php --baseurl='https://$DOMAIN.net/identity' --clientid=moodle-client --clientsecret=2b3969dbc52e41558b6c862024817aaa --loginscopes='openid profile email alloy-api steamfitter-api caster-api' --loginscopesoffline='openid profile email alloy-api steamfitter-api caster-api' --name='Local Identity' --showonloginpage=true --image=https://$DOMAIN/identity/favicon.ico --requireconfirmation=false --json" )
 ISSUER_CMD=$( echo "$COMMAND" | jq '[ .success, (.data | .id) ] | @csv' | tr -d '"')
 
 IFS=',' read -r -a RESULT <<< $ISSUER_CMD

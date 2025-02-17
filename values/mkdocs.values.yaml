@@ -50,14 +50,14 @@ ingress:
     nginx.ingress.kubernetes.io/configuration-snippet: |
       rewrite ^(/start)$ $1/ redirect;
   hosts:
-    - host: savage-lab.net
+    - host: $DOMAIN
       paths:
         - path: /start(/|$)(.*)
           pathType: ImplementationSpecific
   tls:
     - secretName: appliance-cert
       hosts:
-        - savage-lab.net
+        - $DOMAIN
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
@@ -96,7 +96,7 @@ affinity: {}
 ##################
 
 ## giturl is the url of an MkDocs git repository
-giturl: "https://savage-lab.net/gitea/k3s-savage/mkdocs"
+giturl: "https://$DOMAIN.net/gitea/k3s-savage/mkdocs"
 
 ## gitbranch sets which repo branch to publish
 gitbranch: ""
@@ -105,26 +105,7 @@ gitbranch: ""
 pollInterval: 1440
 
 # cacert - add custom CA certificate
-cacert: |-
-  -----BEGIN CERTIFICATE-----
-  MIIDGDCCAgCgAwIBAgIUM2CAYF59zgLfE3dCvPRz6VbkbHwwDQYJKoZIhvcNAQEL
-  BQAwJDEiMCAGA1UEAxMZRm91bmRyeSBBcHBsaWFuY2UgUm9vdCBDQTAeFw0yMzAy
-  MDkyMTAwMDBaFw0yODAyMDgyMTAwMDBaMCQxIjAgBgNVBAMTGUZvdW5kcnkgQXBw
-  bGlhbmNlIFJvb3QgQ0EwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCs
-  99LSPaHJsN050m0RAVG0rM2nnOfK+PlexIF2lJyAsKN5304ni1mJ48EPEzQjDvIC
-  hBTAnWyqvmvJbzdUkCh78VouTjiG+78H0wi2pjgR0F5wQrwtY26YmvafNRo2lY5s
-  +CLq3ejqG9iGiB3nrN6qeHCjMlprAmUVkxHGpekznxRfX2um0tF66qWXRGb0Iue7
-  eiznYsIf2zlAV9Og7ML2bJQ7WAML1moJqhOZGJQ6/GFHr3v0w7UqHxGe/w1ov4y2
-  RtqAQOaS4zunjeOKAbjh9b5v3Ar5jwbCnBa+g5LhNOS+qSdtYorS0UO26AZcW/tX
-  2BYiRreFklM6+VZc+TPlAgMBAAGjQjBAMA4GA1UdDwEB/wQEAwIBBjAPBgNVHRMB
-  Af8EBTADAQH/MB0GA1UdDgQWBBTCvxKADZV4H3gLCZ/9BSuJA5NPkTANBgkqhkiG
-  9w0BAQsFAAOCAQEAnHzk63ogQoejp678jby94+Ym21J67xOtBCPomZBQLbJHaEoF
-  gotSqCC+IWquKTcbM7gFbuYOGb0O1jIDke3vouL5KkGaJECxX3ybQNudRNiqvK9B
-  Pv3lDSV2bCjibbp5hepMiQ10xuf5I9Y9bTJfH7S0H9xrA8ZLRutE0j7FG3d/742P
-  ccXfZvse/mYI/DUT4E6tMnCZjq0DMKh3peHnnF7wkeHJCC9DAzk8gAJsEqL4xlKO
-  jD7gV98Ko9o9stZAbsLM7xecr3k+aQ4FaL/RwVDu7gZ3QkzMRkf7tqPuSe9pgVhm
-  vDZpZReQOHdwYS9n2EIYd7oxq6/IxnT1tLSEWQ==
-  -----END CERTIFICATE-----
+cacert: ""
 
 ######################
 # Non-Git deployment #
