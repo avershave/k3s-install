@@ -5,9 +5,9 @@ set -ebpf
 #####################
 ##     GLOBAL      ##
 #####################
-export K3S_VERSION=1.24.9
-export RANCHER_VERSION=v2.7.0
-export LONGHORN_VERSION=v1.4.0
+export K3S_VERSION=1.31.5
+export RANCHER_VERSION=v2.10.2
+export LONGHORN_VERSION=v1.8.0
 export DOMAIN=
 export GLOBAL_ADMIN_PASS=
 export RANCHER_PASS=

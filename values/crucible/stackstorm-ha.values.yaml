@@ -5,6 +5,11 @@
 ## Docker image settings, applied to all StackStorm pods
 ##
 image:
+  # utility image to use as sidecar for running startup scripts
+  # allows you to override the registry namespace as well if you are using a private registry
+  # ie
+  # utilityImage: "myprivateregsistry.local/ext.docker.io/library/busybox:1.28"
+  utilityImage: ""
   # Image pull policy
   pullPolicy: IfNotPresent
   # st2 image repository. Set this to override the default ("stackstorm").
@@ -19,8 +24,22 @@ image:
   # May be required for public docker hub due to rate limiting or any private repository.
   # See: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
   #pullSecret: "your-pull-secret"
+  # Image entry point for st2* deployments (except st2web and st2chatops).
+  # This chart replaces the entrypoint (command+args) baked into the docker images.
+  # If you are have installed a custom init process (like dumb-init, pid1, tini or similar),
+  # in the docker image(s) you are using, you can add that entrypoint here.
+  entrypoint: []
+    # For example you could add dumb-init like this (dumb-init must be present in the image).
+    #- "/usr/bin/dumb-init"
+    #- "--"
 
-
+##
+## local cluster domain suffix to enable fqdn lookups for redis, mongo
+##  kube-dns defaults to cluster.local and allows override with --domain
+##  core-dns has no default but allows config in k8 configmap
+##    https://kubernetes.io/docs/tasks/administer-cluster/dns-custom-nameservers/#configuration-of-stub-domain-and-upstream-nameserver-using-coredns
+##
+clusterDomain: cluster.local
 
 ##
 ## Service Account
@@ -49,7 +68,13 @@ st2:
   # Password, used to login to StackStorm system
   # If set, st2.password always overrides any existing password.
   # If not set, the password is auto-generated on install and preserved across upgrades.
+  # Disabled if st2.existingAuthSecret is set
   #password: Ch@ngeMe
+  # Name of existing ST2 Auth secret, disables creation of this secret
+  # existingAuthSecret: ""
+  # Name of existing ST2 datastore secret, disables creation of this secret
+  # existingDatastoreSecret: ""
+
   # ST2 crypto key for the  K/V datastore.
   # See https://docs.stackstorm.com/datastore.html#securing-secrets-admin-only for more info.
   # If set, st2.datastore_crypto_key always overrides any existing datastore_crypto_key.
@@ -70,6 +95,11 @@ st2:
   config: |
     [api]
     allow_origin = '*'
+    # fixes no replicaset found bug;
+    [database]
+    # Connection and server selection timeout (in ms).
+    connection_timeout = 5000
+
 
   #Override Definitions can be added here.
   #https://docs.stackstorm.com/latest/packs.html#overriding-pack-defaults
@@ -138,12 +168,19 @@ st2:
       #  pullPolicy: IfNotPresent
       # Optional name of the imagePullSecret if your custom packs image is hosted by a private Docker registry
       #  pullSecret: st2packs-auth
+      # Optional .securityContext override for container
+      #  securityContext:
 
     # Custom packs volumes definitions.
     #
     # Use this to have StackStorm use persistent/shared/writable storage configured previously in your cluster.
     # The choice of storage solution is cluster-dependent (it changes besed on where the cluster is hosted
     # and which storage solutions are available in your cluster).
+    #
+    # WARNING: These volumes must use ReadWriteMany (RWX) access mode so StackStorm
+    # can dynamically install packs from any of the st2actionrunner pods and have those
+    # file changes available in all of the other StackStorm pods.
+    # see: https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes
     #
     # To use this, set enabled to true, and add cluster-specific volume definitions for at least packs and virtualenvs below.
     # Please consult the documentation for your cluster's storage solution.
@@ -157,7 +194,7 @@ st2:
 
         # example using persistentVolumeClaim:
         #persistentVolumeClaim:
-        #  claim-name: pvc-st2-packs
+        #  claimName: pvc-st2-packs
 
         # example using NFS:
         #nfs:
@@ -271,7 +308,7 @@ st2:
 
 ##
 ## Default SecurityContext for pods and containers.
-## Overrides available for st2web, st2actionrunner, st2sensorcontainer, and st2client pods.
+## Overrides available for st2web, st2actionrunner, st2sensorcontainer, st2client pods, and custom packs images.
 ##
 podSecurityContext: {}
 securityContext: {}
@@ -364,11 +401,12 @@ st2web:
   # The pod will not be marked as "running" until this script completes successfully.
   # see: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/
   postStartScript: ""
+  preStopSleep: "10"
 
 # https://docs.stackstorm.com/reference/ha.html#st2auth
 # Multiple st2auth processes can be behind a load balancer in an active-active configuration.
 st2auth:
-  replicas: 2
+  replicas: 1
   resources:
     requests:
       memory: "85Mi"
@@ -399,6 +437,7 @@ st2auth:
   # The pod will not be marked as "running" until this script completes successfully.
   # see: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/
   postStartScript: ""
+  preStopSleep: "10"
   # mount extra volumes on the st2auth pod(s) (primarily useful for custom logging conf)
   ## Note that Helm templating is supported in 'mount' and 'volume'
   extra_volumes: []
@@ -407,7 +446,7 @@ st2auth:
 # https://docs.stackstorm.com/reference/ha.html#st2api
 # Multiple st2api process can be behind a load balancer in an active-active configuration.
 st2api:
-  replicas: 2
+  replicas: 1
   resources:
     requests:
       memory: "150Mi"
@@ -438,6 +477,7 @@ st2api:
   # The pod will not be marked as "running" until this script completes successfully.
   # see: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/
   postStartScript: ""
+  preStopSleep: "10"
   # mount extra volumes on the st2api pod(s) (primarily useful for custom logging conf)
   ## Note that Helm templating is supported in 'mount' and 'volume'
   extra_volumes: []
@@ -446,7 +486,7 @@ st2api:
 # https://docs.stackstorm.com/reference/ha.html#st2stream
 # Multiple st2stream process can be behind a load balancer in an active-active configuration.
 st2stream:
-  replicas: 2
+  replicas: 1
   resources:
     requests:
       memory: "100Mi"
@@ -477,6 +517,7 @@ st2stream:
   # The pod will not be marked as "running" until this script completes successfully.
   # see: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/
   postStartScript: ""
+  preStopSleep: "10"
   # mount extra volumes on the st2stream pod(s) (primarily useful for custom logging conf)
   ## Note that Helm templating is supported in 'mount' and 'volume'
   extra_volumes: []
@@ -485,7 +526,7 @@ st2stream:
 # https://docs.stackstorm.com/reference/ha.html#st2rulesengine
 # Multiple st2rulesengine processes can run in active-active with only connections to MongoDB and RabbitMQ. All these will share the TriggerInstance load and naturally pick up more work if one or more of the processes becomes unavailable.
 st2rulesengine:
-  replicas: 2
+  replicas: 1
   resources:
     requests:
       memory: "75Mi"
@@ -546,7 +587,9 @@ st2timersengine:
 # https://docs.stackstorm.com/reference/ha.html#st2workflowengine
 # Multiple st2workflowengine processes can run in active-active mode and will share the load and pick up more work if one or more of the processes become available.
 st2workflowengine:
-  replicas: 2
+  # k8 pod timeout.  set this to a few seconds longer than st2 config workflow_engine.exit_still_active_check
+  terminationGracePeriodSeconds: 300
+  replicas: 1
   resources:
     requests:
       memory: "200Mi"
@@ -577,7 +620,7 @@ st2workflowengine:
 # https://docs.stackstorm.com/reference/ha.html#st2scheduler
 # TODO: Description TBD
 st2scheduler:
-  replicas: 2
+  replicas: 1
   resources:
     requests:
       memory: "75Mi"
@@ -608,7 +651,7 @@ st2scheduler:
 # https://docs.stackstorm.com/reference/ha.html#st2notifier
 # st2notifier runs in active-active mode and requires for that coordination backend like Redis or Zookeeper
 st2notifier:
-  replicas: 2
+  replicas: 1
   resources:
     requests:
       memory: "75Mi"
@@ -640,6 +683,9 @@ st2notifier:
 # Multiple st2actionrunner processes can run in active-active with only connections to MongoDB and RabbitMQ. Work gets naturally
 # distributed across runners via RabbitMQ. Adding more st2actionrunner processes increases the ability of StackStorm to execute actions.
 st2actionrunner:
+  # k8 pod timeout.  set this to a few seconds longer than st2 config actionrunner.exit_still_active_check and set
+  # actionrunner.graceful_shutdown = True
+  terminationGracePeriodSeconds: 300
   replicas: 5
   resources:
     requests:
@@ -677,7 +723,7 @@ st2actionrunner:
     attach: false
   # override the default .podSecurityContext or .securityContext here
   podSecurityContext: {}
-  securityContext: {}
+  securityContext: {} # also applies to init or jobs containers that copy/modify files
   # postStartScript is optional. It has the contents of a bash script.
   # k8s will run the script in the st2 container in parallel with the ENTRYPOINT.
   # The pod will not be marked as "running" until this script completes successfully.
@@ -958,6 +1004,8 @@ jobs:
     #   hook: post-install   # required "helm.sh/hook"
     #   hook_weight: 10      # optional hook_weight (defaults to 10)
     #   resources: {}        # optional definition of resources to request
+    #   podSecurityContext: {} # optional definition of pod securityContext override
+    #   securityContext: {}  # optional definition of container securityContext override
     #   command:             # required command to run
     #     - st2
     #     - run
@@ -972,6 +1020,7 @@ jobs:
     #     - run
     #     - --tail
     #     - custom_pack.warn_about_upgrade
+
 ##
 ## MongoDB HA configuration (3rd party chart dependency)
 ##
@@ -992,7 +1041,7 @@ mongodb:
   replicaSetName: rs0
   # Number of MongoDB replicas to deploy.
   # Ignored when mongodb.architecture=standalone
-  replicaCount: 3
+  replicaCount: 1
   auth:
     enabled: true
     # NB! It's highly recommended to change ALL insecure auth defaults!
@@ -1000,13 +1049,13 @@ mongodb:
     # Stackstorm user that services will make connections using
     username: "st2-admin"
     # Stackstorm user that services will make connections using
-    password: "XeL5Rxwj7F0Wt43tFZVTN7H8Sg5XDHmK"
+    password: $STACKSTORM_MONGO_PASS
     # Root password for the database
-    rootPassword: "8fAzdnksdzPFUWm4a68EfY7nMhBPaa"
+    rootPassword: $ROOT_STACKSTORM_MONGO_PASS
     # Initial database for stackstorm
     database: "st2"
     # Minimal key length is 6 symbols and may only contain characters in the base64 set.
-    replicaSetKey: "82PItDpqroti5RngOA7UqbHH7c6bFUwy"
+    replicaSetKey: $STACKSTORM_MONGO_KEY
     # Whether to enable the arbiter
   arbiter:
     enabled: false
@@ -1030,10 +1079,10 @@ rabbitmq:
   auth:
     username: admin
     # TODO: Use default random 10 character password, but need to fetch this string for use by downstream services
-    password: 9jS+w1u07NbHtZke1m+jW4Cj
+    password: $STACKSTORM_RABBITMQ_PASS
     # Up to 255 character string, should be fixed so that re-deploying the chart does not fail (see: https://github.com/helm/charts/issues/12371)
     # NB! It's highly recommended to change the default insecure rabbitmqErlangCookie value!
-    erlangCookie: 8MrqQdCQ6AQ8U3MacSubHE5RqkSfvNaRHzvxuFcG
+    erlangCookie: $STACKSTORM_RABBITMQ_COOKIE
   # RabbitMQ Memory high watermark. See: http://www.rabbitmq.com/memory.html
   # Default values might not be enough for StackStorm deployment to work properly. We recommend to adjust these settings for you needs as well as enable Pod memory limits via "resources".
   #rabbitmqMemoryHighWatermark: 512MB
@@ -1054,7 +1103,7 @@ rabbitmq:
   # rabbitmqMemoryHighWatermark = 0.4 * resources.limits.memory
   resources: {}
   # number of replicas in the rabbit cluster
-  replicaCount: 3
+  replicaCount: 1
   # As RabbitMQ enabled prometheus operator monitoring by default, disable it for non-prometheus users
   metrics:
     enabled: false
@@ -1072,7 +1121,7 @@ redis:
   # By default the cluster is enabled for the subchart.
   # We just need replica count here to ensure it is HA
   cluster:
-    slaveCount: 3
+    slaveCount: 1
   # Sentinel settings. Sentinel is enabled for better resiliency.
   # This is highly recommended as per tooz library documentation.
   # Hence, the chart requires the setting.
