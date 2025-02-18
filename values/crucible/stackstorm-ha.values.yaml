@@ -130,7 +130,7 @@ st2:
     images:
       - repository: cmusei
         name: st2packs
-        tag: 1.2.0
+        tag: 1.0.0
         pullPolicy: IfNotPresent
       #- repository: index.docker.io/stackstorm
       #  name: st2packs
