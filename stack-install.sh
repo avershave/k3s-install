@@ -351,7 +351,7 @@ function crucible () {
     fi
 
     envsubst < values/crucible/steamfitter.values.yaml | helm upgrade -i steamfitter sei/steamfitter -f -
-    envsubst < values/crucible/mongodb.values.yaml | helm upgrade -i mongodb bitnami/mongodb -f -
+    # envsubst < values/crucible/mongodb.values.yaml | helm upgrade -i mongodb bitnami/mongodb -f -
     envsubst < values/crucible/stackstorm-ha.values.yaml | helm upgrade -i stackstorm stackstorm/stackstorm-ha -f - --wait --timeout 10m
 
     git -C $MKDOCS_DIR add -A || true
