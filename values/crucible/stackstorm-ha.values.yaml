@@ -317,26 +317,24 @@ securityContext: {}
 ## StackStorm HA Ingress
 ##
 ingress:
-  # As recommended, ingress is disabled by default.
-  enabled: false
-  # Annotations are used to configure the ingress controller
-  annotations: {}
-    # kubernetes.io/ingress.class: nginx
-    # kubernetes.io/tls-acme: "true"
-  # Map hosts to paths
-  hosts: []
-  # - host: hostname.domain.tld
-  #   # Map paths to services
-  #   paths:
-  #     - path: /
-  #       serviceName: service
-  #       servicePort: port
-  # Secure the Ingress by specifying a secret that contains a TLS private key and certificate
-  tls: []
-  # - secretName: chart-example-tls
-  #   hosts:
-  #     - chart-example.test
-  # ingressClassName: nginx-ingress
+  enabled: true
+  annotations:
+    kubernetes.io/ingress.class: $INGRESS_CLASS
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+    nginx.ingress.kubernetes.io/proxy-read-timeout: '86400'
+    nginx.ingress.kubernetes.io/proxy-send-timeout: '86400'
+    nginx.ingress.kubernetes.io/use-regex: "true"
+  hosts:
+    - host: $DOMAIN
+      paths:
+        - path: "/stackstorm/(.*)"
+          pathType: Prefix
+          serviceName: stackstorm-ha-st2web
+          servicePort: 80
+  tls:
+    - secretName: appliance-cert
+      hosts:
+        - $DOMAIN
 
 ##
 ## NOTE: there used to be a secrets.st2 section here. These values have moved into st2.* above. Please update your values.
